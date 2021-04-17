@@ -1,0 +1,31 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+env:
+  DENO_VERSION: ^1.9.0
+jobs:
+  release:
+    name: Production Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: denoland/setup-deno@main
+        with:
+          deno-version: {{ env.DENO_VERSION }}
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+      - name: Install flyctl
+        run: curl -L https://fly.io/install.sh | sh
+      - name: Create Fly.io Project Config
+        run: echo '${{ secrets.FLY_IO_CONFIG }}' > fly.toml
+      - name: Install Semantic Release
+        run: npm i semantic-release @semantic-release/exec
+      - name: Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FLY_IO_APP_NAME: ${{secrets.FLY_IO_APP_NAME}}
+          FLY_IO_TOKEN: ${{ secrets.FLY_IO_TOKEN }}
+        run: npx --no-install semantic-release
