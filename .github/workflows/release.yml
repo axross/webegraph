@@ -1,0 +1,31 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+env:
+  DENO_VERSION: ^1.9.0
+jobs:
+  release:
+    name: Production Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: denoland/setup-deno@main
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+      - name: Install flyctl
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          echo "FLYCTL_INSTALL=$HOME/.fly" >> $GITHUB_ENV
+          echo "$HOME/.fly/bin" >> $GITHUB_PATH
+      - run: echo "$PATH"
+      - name: Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FLY_APP_NAME: ${{secrets.FLY_APP_NAME}}
+          FLY_ACCESS_TOKEN: ${{ secrets.FLY_ACCESS_TOKEN }}
+        run: npx --package semantic-release --package @semantic-release/exec semantic-release
